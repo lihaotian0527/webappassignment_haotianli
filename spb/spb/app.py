@@ -34,5 +34,37 @@ def currentjobs():
     jobList = connection.fetchall()
     return render_template("currentjoblist.html", job_list = jobList)    
 
+@app.route("/currentjobs")
+def currentjobs():
+    cursor = getCursor()
+    query = """
+    SELECT j.job_id, c.name, j.job_date
+    FROM job j
+    JOIN customer c ON j.customer = c.customer_id
+    WHERE j.completed = 0;
+    """
+    cursor.execute(query)
+    jobList = cursor.fetchall()
+    return render_template("currentjoblist.html", job_list=jobList)
 
+@app.route("/addcustomer", methods=["GET", "POST"])
+def add_customer():
+    if request.method == "POST":
+        name = request.form['name']
+        phone = request.form['phone']
+        email = request.form['email']
+        cursor = getCursor()
+        cursor.execute("INSERT INTO customer (name, phone, email) VALUES (%s, %s, %s)", (name, phone, email))
+        return redirect(url_for('customer_list'))
+    return render_template("addcustomer.html")
 
+@app.route("/searchcustomer", methods=["GET", "POST"])
+def search_customer():
+    if request.method == "POST":
+        search_term = request.form['search_term']
+        cursor = getCursor()
+        query = "SELECT * FROM customer WHERE name LIKE %s"
+        cursor.execute(query, ('%' + search_term + '%',))
+        results = cursor.fetchall()
+        return render_template("searchresults.html", results=results)
+    return render_template("searchcustomer.html")
